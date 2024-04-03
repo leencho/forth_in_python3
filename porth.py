@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-
+import subprocess
 
 iota_counter = 0
 
@@ -59,8 +59,69 @@ def simulate_program(program):
             assert False, "unreachable"
 
 
-def compile(program):
-    assert False, "NOT implemented!"
+def compile(program, file):
+    with open(file, "w") as file:
+        file.write("BITS 64\n")
+        file.write("segment .text\n")
+        file.write("dump:\n")
+        file.write("\t mov  r8, -3689348814741910323\n")
+        file.write("\t sub     rsp, 40\n")
+        file.write("\t mov     BYTE [rsp+31], 10\n")
+        file.write("\t lea     rcx, [rsp+30]\n")
+        file.write(".L2:\n")
+        file.write("\t mov rax, rdi\n")
+        file.write("\t mul r8\n")
+        file.write("\t mov rax, rdi\n")
+        file.write("\t shr rdx, 3\n")
+        file.write("\t lea rsi, [rdx+rdx*4]\n")
+        file.write("\t add rsi, rsi\n")
+        file.write("\t sub rax, rsi\n")
+        file.write("\t mov rsi, rcx\n")
+        file.write("\t sub     rcx, 1\n")
+        file.write("\t add     eax, 48\n")
+        file.write("\t mov     BYTE [rcx+1], al\n")
+        file.write("\t mov     rax, rdi\n")
+        file.write("\t mov     rdi, rdx\n")
+        file.write("\t cmp     rax, 9\n\n")
+        file.write("\t ja      .L2\n")
+        file.write("\t lea     rdx, [rsp+32]\n")
+        file.write("\t mov     edi, 1\n")
+        file.write("\t xor     eax, eax\n")
+        file.write("\t sub     rdx, rsi\n")
+        file.write("\t mov     rax, 1\n")
+        file.write("\t syscall\n")
+        file.write("\t add     rsp, 40\n")
+        file.write("\t ret\n")
+        file.write("global _start\n")
+        file.write("_start:\n")
+        for op in program:
+            assert COUNT_OPS == 4, "Exhaustive use of ops in compilation"
+            if op[0] == OP_PUSH:
+                file.write(";; -- push ---\n")
+                file.write("\t push %d\n" % op[1])
+            elif op[0] == OP_PLUS:
+                file.write(";; -- plus ---\n")
+                file.write("\t pop rbx\n")
+                file.write("\t pop rcx\n")
+                file.write("\t add rbx, rcx\n")
+                file.write("\t push rbx\n")
+            elif op[0] == OP_MINUS:
+                file.write(";; -- minus ---\n")
+                file.write("\t pop rbx\n")
+                file.write("\t pop rcx\n")
+                file.write("\t sub rcx, rbx\n")
+                file.write("\t push rcx\n")
+            elif op[0] == OP_DUMP:
+                file.write(";; -- dump ---\n")
+                file.write("\t pop rdi\n")
+                file.write("\t call dump\n")
+
+            else:
+                assert "unreachable"
+        file.write(";; -- exit syscall ---\n")
+        file.write("\t mov rax, 60\n")
+        file.write("\t mov rdi, 69\n")
+        file.write("\t syscall\n")
 
 
 program = [
@@ -75,6 +136,11 @@ program = [
 ]
 
 
+def call_command(command):
+    print(command)
+    subprocess.call(command)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(f"Usage{sys.argv[0]} <SUBCOMMAND> [ARGS]")
@@ -87,6 +153,8 @@ if __name__ == "__main__":
     if subcommand == "sim":
         simulate_program(program=program)
     elif subcommand == "com":
-        print("Not implemented")
+        compile(program=program, file="output.asm")
+        call_command(["nasm", "-felf64", "output.asm", "-o", "output.o"])
+        call_command(["ld", "-o", "output", "output.o"])
     else:
         print(f"UNKNOWN SUBCOMMAND: {subcommand}")

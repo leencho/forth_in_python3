@@ -1,2 +1,4 @@
 test.py
 Makefile_mac
+*.o
+test/
