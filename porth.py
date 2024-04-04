@@ -124,16 +124,43 @@ def compile(program, file):
         file.write("\t syscall\n")
 
 
-program = [
-    push(34),
-    push(35),
-    plus(),
-    dump(),
-    push(30),
-    push(4),
-    minus(),
-    dump()
-]
+# program = [
+#     push(34),
+#     push(35),
+#     plus(),
+#     dump(),
+#     push(30),
+#     push(4),
+#     minus(),
+#     dump()
+# ]
+
+def parse_word_as_op(word):
+    assert COUNT_OPS == 4, "Exhaustive op handling in parsing op as word"
+    if word == '+':
+        return plus()
+    elif word == '-':
+        return minus()
+    elif word == '.':
+        return dump()
+    else:
+        return push(int(word))
+
+
+def load_program_from_file(file):
+    with open(file) as f:
+        return [parse_word_as_op(word) for word in f.read().split()]
+
+
+def unconst(xs):
+    return (xs[0], xs[1:])
+
+
+def usage(program):
+    print(f"Usage {program} <SUBCOMMAND> [ARGS]")
+    print(f"SUBCOMMANDS:")
+    print("     sim  <file>      simulate the program ")
+    print("      com  <file>    compile the program ")
 
 
 def call_command(command):
@@ -142,19 +169,33 @@ def call_command(command):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(f"Usage{sys.argv[0]} <SUBCOMMAND> [ARGS]")
-        print(f"SUBCOMMANDS:")
-        print("     sim        simulate the program ")
-        print("      com      compile the program ")
+    argv = sys.argv
+    assert len(argv) >= 1
+    (program_name, argv) = unconst(argv)
+    if len(argv) < 1:
+        usage(program=program_name)
         print("ERROR: no subcommand provided")
         exit(-1)
-    subcommand = sys.argv[1]
+    (subcommand, argv) = unconst(argv)
     if subcommand == "sim":
+        if (len(argv)) < 1:
+            usage(program=program_name)
+            print("ERROR: no inputfile provided for simulation")
+            exit(1)
+        (input_file, argv) = unconst(argv)
+        program = load_program_from_file(input_file)
         simulate_program(program=program)
     elif subcommand == "com":
+        if len(argv) < 1:
+            usage(program=program_name)
+            print("ERROR: no file provided for compilation")
+            exit(1)
+        (input_file, argv) = unconst(argv)
+        program = load_program_from_file(input_file)
         compile(program=program, file="output.asm")
         call_command(["nasm", "-felf64", "output.asm", "-o", "output.o"])
         call_command(["ld", "-o", "output", "output.o"])
     else:
+        usage(program=program_name)
         print(f"UNKNOWN SUBCOMMAND: {subcommand}")
+        exit(1)

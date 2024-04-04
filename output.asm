@@ -45,14 +45,38 @@ _start:
 	 pop rdi
 	 call dump
 ;; -- push ---
-	 push 30
+	 push 50
 ;; -- push ---
-	 push 4
+	 push 30
 ;; -- minus ---
 	 pop rbx
 	 pop rcx
 	 sub rcx, rbx
 	 push rcx
+;; -- dump ---
+	 pop rdi
+	 call dump
+;; -- push ---
+	 push 80
+;; -- push ---
+	 push 30
+;; -- minus ---
+	 pop rbx
+	 pop rcx
+	 sub rcx, rbx
+	 push rcx
+;; -- dump ---
+	 pop rdi
+	 call dump
+;; -- push ---
+	 push 89
+;; -- push ---
+	 push 1
+;; -- plus ---
+	 pop rbx
+	 pop rcx
+	 add rbx, rcx
+	 push rbx
 ;; -- dump ---
 	 pop rdi
 	 call dump
